@@ -49,13 +49,30 @@ io.on("connection", (socket) => {
     userSocketMap[socket.id] = username;
     socket.join(roomId);
     const clients = getAllConnectedClients(roomId);
-    clients.forEach(({socketId})=> {
+    clients.forEach(({ socketId }) => {
       io.to(socketId).emit("joined", {
         clients,
         username,
-        socketId: socket.id
-      })
-    })
+        socketId: socket.id,
+      });
+    });
+  });
+
+  socket.on("code-change", ({ roomId, code }) => {
+    socket.in(roomId).emit("code-change", { code });
+  });
+
+  socket.on("disconnecting", () => {
+    console.log("disconnected");
+    const rooms = [...socket.rooms];
+    rooms.forEach((roomId) => {
+      socket.in(roomId).emit("disconnected", {
+        socketId: socket.id,
+        username: userSocketMap[socket.id],
+      });
+    });
+    delete userSocketMap[socket.id];
+    socket.leave();
   });
 });
 

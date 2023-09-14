@@ -15,11 +15,7 @@ const EditorPage = () => {
   const location = useLocation();
   const reactNavigator = useNavigate();
   const socketRef = useRef(null);
-  const [clients, setClients] = useState([
-    { socketId: "dfdhfkjdf", username: "varun" },
-    { socketId: "fdfdfdfd", username: "Something" },
-    { socketId: "dfdhfkjdf", username: "Anything" },
-  ]);
+  const [clients, setClients] = useState([]);
   const { roomId } = useParams();
 
   useEffect(() => {
@@ -40,16 +36,50 @@ const EditorPage = () => {
       });
 
       // listening for the joined event
-      socketRef.on(ACTIONS.JOINED, ({client, username, socketId}) => {
+      socketRef.current.on(
+        ACTIONS.JOINED,
+        ({ clients, username, socketId }) => {
+          if (username !== location.state?.username) {
+            toast.success(`${username} joined the room. `);
+            console.log(`${username} joined`);
+          }
+          setClients(clients);
+        }
+      );
 
-      })
+      // listening for disconnected
+      socketRef.current.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
+        toast.success(`${username} left the room`);
+        setClients((prev) =>
+          prev.filter((client) => client.socketId !== socketId)
+        );
+      });
     };
     init();
+    return () => {
+      socketRef.current.disconnect();
+      socketRef.current.off(ACTIONS.JOINED);
+      socketRef.current.off(ACTIONS.DISCONNECTED);
+    };
   }, []);
 
   if (!location.state) {
     return <Navigate to="/" />;
   }
+
+  const copyRoomId = async () => {
+    try {
+      await navigator.clipboard.writeText(roomId);
+      toast.success("Room ID has been copied to your clipboard");
+    } catch (err) {
+      toast.error("Room ID cannot be copied..");
+      console.log(err);
+    }
+  };
+
+  const leaveRoom = () => {
+    reactNavigator("/");
+  };
 
   return (
     <div className="mainWrap">
@@ -65,11 +95,13 @@ const EditorPage = () => {
             ))}
           </div>
         </div>
-        <button className="btn copyBtn">Copy ROOM ID</button>
-        <button className="btn leaveBtn">Leave</button>
+        <button className="btn copyBtn" onClick={copyRoomId}>
+          Copy ROOM ID
+        </button>
+        <button className="btn leaveBtn" onClick={leaveRoom}>Leave</button>
       </div>
       <div className="editorWrap">
-        <Editor />
+        <Editor socketRef={socketRef} roomId={roomId} />
       </div>
     </div>
   );

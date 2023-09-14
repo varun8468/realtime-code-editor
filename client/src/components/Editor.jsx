@@ -1,29 +1,55 @@
 import React, { useEffect, useRef } from "react";
-import { EditorState } from "@codemirror/state";
-import { keymap } from "@codemirror/view";
-import { defaultKeymap } from "@codemirror/commands";
-import { EditorView, basicSetup } from "codemirror";
-import { javascript } from "@codemirror/lang-javascript";
+import Codemirror from "codemirror";
+import "codemirror/lib/codemirror.css";
+import "codemirror/theme/dracula.css";
+import "codemirror/mode/javascript/javascript";
+import "codemirror/addon/edit/closetag";
+import "codemirror/addon/edit/closebrackets";
+import ACTIONS from "../Actions";
 
-const Editor = () => {
+const Editor = ({ socketRef, roomId }) => {
+  const editorRef = useRef(null);
   useEffect(() => {
     async function init() {
-      let view = new EditorView({
-        extensions: [
-          basicSetup,
-          javascript(),
-          EditorView.theme({
-            ".cm-content": { color: "darkorange" },
-            "&.cm-focused .cm-content": { color: "orange" },
-          }),
-        ],
-        parent: document.getElementById("realtimeEditor"),
+      editorRef.current = Codemirror.fromTextArea(
+        document.getElementById("realtimeEditor"),
+        {
+          mode: { name: "javascript", json: true },
+          theme: "dracula",
+          autoCloseTags: true,
+          autoCloseBrackets: true,
+          lineNumbers: true,
+        }
+      );
+      editorRef.current.on("change", (instance, changes) => {
+        const { origin } = changes;
+        const code = instance.getValue();
+        if (origin !== "setValue") {
+          socketRef.current.emit(ACTIONS.CODE_CHANGE, {
+            roomId,
+            code,
+          });
+        }
       });
     }
     init();
   }, []);
 
-  return <div id="realtimeEditor"></div>;
+  useEffect(() => {
+    if (socketRef.current) {
+      socketRef.current.on("code-change", ({ code }) => {
+        console.log(code);
+        if (code !== null) {
+          editorRef.current.setValue(code);
+        }
+      });
+    }
+    return () => {
+      socketRef.current.off("code-change");
+    }
+  }, [socketRef.current]);
+
+  return <textarea id="realtimeEditor"></textarea>;
 };
 
 export default Editor;

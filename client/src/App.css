@@ -100,7 +100,6 @@ footer a:hover {
     color: #fff;
     display: flex;
     flex-direction: column;
-    height: 90vh;
 }
 .asideInner {
     flex: 1;
@@ -136,10 +135,9 @@ footer a:hover {
     width: 100%;
     margin-top: 20px;
 }
-#realtimeEditor {
+.CodeMirror {
     min-height: calc(100vh - 20px);
     font-size: 20px;
     line-height: 1.6;
     padding-top: 20px;
-    background-color: #F0F0F0;
 }
