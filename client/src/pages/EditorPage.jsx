@@ -12,6 +12,7 @@ import {
 } from "react-router-dom";
 
 const EditorPage = () => {
+  const codeRef = useRef(null);
   const location = useLocation();
   const reactNavigator = useNavigate();
   const socketRef = useRef(null);
@@ -44,6 +45,10 @@ const EditorPage = () => {
             console.log(`${username} joined`);
           }
           setClients(clients);
+          socketRef.current.emit(ACTIONS.SYNC_CODE, {
+            code: codeRef.current,
+            socketId
+          });
         }
       );
 
@@ -98,10 +103,18 @@ const EditorPage = () => {
         <button className="btn copyBtn" onClick={copyRoomId}>
           Copy ROOM ID
         </button>
-        <button className="btn leaveBtn" onClick={leaveRoom}>Leave</button>
+        <button className="btn leaveBtn" onClick={leaveRoom}>
+          Leave
+        </button>
       </div>
       <div className="editorWrap">
-        <Editor socketRef={socketRef} roomId={roomId} />
+        <Editor
+          socketRef={socketRef}
+          roomId={roomId}
+          onCodeChange={(code) => {
+            codeRef.current = code;
+          }}
+        />
       </div>
     </div>
   );

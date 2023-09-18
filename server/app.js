@@ -62,6 +62,10 @@ io.on("connection", (socket) => {
     socket.in(roomId).emit("code-change", { code });
   });
 
+  socket.on("sync-code", ({ code, socketId }) => {
+    io.to(socketId).emit("code-change", { code });
+  });
+
   socket.on("disconnecting", () => {
     console.log("disconnected");
     const rooms = [...socket.rooms];
